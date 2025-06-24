@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Face Registration</title>
+</head>
+<body>
+  <h2>Register with Face</h2>
+
+  <label>Name:</label>
+  <input id="name" type="text" placeholder="Enter your name" /><br/><br/>
+  <label>Email:</label>
+  <input id="email" type="email" placeholder="Enter your email" /><br/><br/>
+
+  <video id="video" width="320" height="240" autoplay muted></video><br/><br/>
+  <button onclick="registerFace()">Register Face</button>
+
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+  <script>
+  async function registerFace() {
+    const name = document.getElementById("name").value;
+    const email = document.getElementById("email").value;
+
+    if (!name || !email) {
+      alert("Please enter name and email.");
+      return;
+    }
+
+    // ✅ Confirmation prompt
+    const confirmCapture = confirm("Are you ready to capture your face for registration?");
+    if (!confirmCapture) return;
+
+    const detection = await faceapi
+      .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+      .withFaceLandmarks()
+      .withFaceDescriptor();
+
+    if (!detection) {
+      alert("Face not detected. Please try again.");
+      return;
+    }
+
+    const descriptor = Array.from(detection.descriptor);
+
+    const user = {
+      name,
+      email,
+      faceData: JSON.stringify(descriptor)
+    };
+
+    try {
+      const res = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(user)
+      });
+
+      const data = await res.json();
+      alert(data.message);
+    } catch (err) {
+      alert("Registration failed.");
+    }
+  }
+</script>
+
+</body>
+</html>
